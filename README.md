@@ -1,24 +1,45 @@
 # Therapist-Client Scheduling System
 
-A Flask-based API for managing therapist-client appointments.
+A Flask-based web application for managing therapist-client appointments.
 
 ## Features
 
-- Therapists can post available 1-hour slots
-- Clients can view available slots by therapist and date
-- Clients can book available slots with a specific therapist
-- Double bookings are prevented
-- Clients can cancel existing appointments
-- Interfaces via REST API, CLI, and Web UI
-- Firebase Realtime Database integration
+- Therapists can create availability slots individually or in time ranges
+- Clients can search for therapists with available slots on specific dates
+- Clients can view and book available slots with a specific therapist
+- Therapists can view their complete schedule (both available and booked slots)
+- Double bookings are prevented through validation
+- Therapists can cancel bookings
+- Clean, responsive UI built with Bootstrap 5
+- Modern interface with filtering and sorting capabilities
 
 ## Tech Stack
 
-- Python 3.8+
-- Flask (Web framework)
-- Pydantic (Data validation and settings management)
-- Firebase Admin SDK (Database)
-- Bootstrap 5 (UI components)
+- **Backend:**
+
+  - Python 3.8+
+  - Flask (Web framework)
+  - Firebase Realtime Database (Data storage)
+  - Pydantic (Data validation)
+
+- **Frontend:**
+  - Bootstrap 5 (UI framework)
+  - Vanilla JavaScript (Client-side logic)
+  - FontAwesome (Icons)
+
+## Architecture
+
+The application follows a layered architecture pattern:
+
+1. **Presentation Layer** - Flask routes and HTML templates
+2. **Service Layer** - AppointmentService class for business logic
+3. **Data Access Layer** - Integration modules for database interactions
+
+The system is designed with modularity in mind:
+
+- The database integration is abstracted behind a common interface
+- Multiple backend implementations can be used interchangeably
+- Modern OOP principles are applied throughout the codebase
 
 ## Prerequisites
 
@@ -57,7 +78,7 @@ A Flask-based API for managing therapist-client appointments.
 5. Set up Firebase:
 
    - Go to Firebase Console (https://console.firebase.google.com)
-   - Select your project "sansa-sswe-kevin"
+   - Select your project
    - Enable Realtime Database
    - Go to Project Settings > Service Accounts
    - Click "Generate New Private Key"
@@ -105,16 +126,17 @@ The application provides a web-based user interface with separate portals for th
 ### Therapist Portal
 
 - Create new availability slots by specifying date and time
-- View existing slots for specific dates
-- Monitor booking status of all slots
+- Create multiple slots at once by specifying a time range and slot duration
+- View complete schedule with filtering options for available and booked slots
+- Cancel bookings directly from the schedule view
+- View statistics about available and booked slots
 
 ### Client Portal
 
-- Search for available slots by therapist and date
-- Book appointments with one-click booking
-- Cancel existing bookings
-
-Access the UI by navigating to `http://0.0.0.0:5001/` in your web browser after starting the application.
+- Search for therapists with availability on specific dates
+- View therapist availability statistics
+- Book appointments with a selected therapist
+- See real-time updates of available slots
 
 ## API Endpoints
 
@@ -140,6 +162,32 @@ POST /api/appointments/therapist/slots
 {
   "success": true,
   "message": "Slot created successfully"
+}
+```
+
+### Create availability range (for therapists)
+
+```
+POST /api/appointments/therapist/availability
+```
+
+**Request Body**:
+
+```json
+{
+  "therapist_id": "123",
+  "start_time": "2023-06-01T09:00:00",
+  "end_time": "2023-06-01T17:00:00",
+  "slot_duration_minutes": 60
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "message": "Created 8 slots successfully"
 }
 ```
 
@@ -171,6 +219,35 @@ GET /api/appointments/therapist/{therapist_id}/slots?date=2023-06-01
 }
 ```
 
+### List therapists with availability statistics
+
+```
+GET /api/appointments/therapists?date=2023-06-01&therapist_ids=123,456
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "date": "2023-06-01",
+  "therapists": [
+    {
+      "therapist_id": "123",
+      "total_slots": 8,
+      "available_slots": 6,
+      "booked_slots": 2
+    },
+    {
+      "therapist_id": "456",
+      "total_slots": 5,
+      "available_slots": 3,
+      "booked_slots": 2
+    }
+  ]
+}
+```
+
 ### Book a slot (for clients)
 
 ```
@@ -195,7 +272,7 @@ POST /api/appointments/book
 }
 ```
 
-### Cancel a booking (for clients)
+### Cancel a booking (for therapists)
 
 ```
 POST /api/appointments/cancel

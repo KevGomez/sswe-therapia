@@ -1,5 +1,5 @@
 from datetime import datetime, date, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import os
 import logging
 
@@ -115,7 +115,9 @@ def _save_therapist_slots(therapist_id: str, slots: List[Dict[str, Any]]) -> Non
 
 def create_free_slot(therapist_id: str, start_time: datetime, end_time: datetime) -> bool:
     """
-    Create a free slot for a therapist in the calendar.
+    Create a free slot for a therapist.
+    
+    Note: This is a mock Google Calendar API implementation that actually uses Firebase.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -149,7 +151,7 @@ def create_free_slot(therapist_id: str, start_time: datetime, end_time: datetime
 
 def create_availability_range(therapist_id: str, start_time: datetime, end_time: datetime, slot_duration_minutes: int = 60) -> bool:
     """
-    Create multiple free slots within a time range for a therapist.
+    Create multiple free slots for a therapist within a time range.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -160,52 +162,30 @@ def create_availability_range(therapist_id: str, start_time: datetime, end_time:
     Returns:
         bool: True if all slots were created successfully, False otherwise
     """
-    logger.info(f"Creating availability range for therapist {therapist_id} from {start_time} to {end_time}")
-    
-    # Calculate time slots
-    current_start = start_time
+    if slot_duration_minutes <= 0:
+        logger.error(f"Invalid slot duration: {slot_duration_minutes} minutes")
+        return False
+
+    if start_time >= end_time:
+        logger.error(f"Invalid time range: start time {start_time} is not before end time {end_time}")
+        return False
+
     slots_created = 0
+    current_start = start_time
     
-    # Get existing slots
-    existing_slots = _get_therapist_slots(therapist_id)
-    new_slots = []
-    
-    # Create slot objects for the entire range
-    while current_start < end_time:
-        slot_end = current_start + timedelta(minutes=slot_duration_minutes)
+    # Create slots until we've filled the entire range
+    while current_start + timedelta(minutes=slot_duration_minutes) <= end_time:
+        current_end = current_start + timedelta(minutes=slot_duration_minutes)
         
-        # Make sure we don't go beyond the end time
-        if slot_end > end_time:
-            slot_end = end_time
-            
-        # Only create complete slots if they are at least the minimum duration
-        if (slot_end - current_start).total_seconds() / 60 >= slot_duration_minutes:
-            # Check for overlap with existing slots
-            is_overlapping = False
-            for slot_dict in existing_slots:
-                slot = TimeSlot.from_dict(slot_dict)
-                if (current_start < slot.end_time and slot_end > slot.start_time):
-                    is_overlapping = True
-                    logger.warning(f"Skipping overlapping slot: {current_start} - {slot_end}")
-                    break
-            
-            if not is_overlapping:
-                new_slot = TimeSlot(start_time=current_start, end_time=slot_end)
-                new_slots.append(new_slot.to_dict())
-                slots_created += 1
+        # Try to create the slot
+        if create_free_slot(therapist_id, current_start, current_end):
+            slots_created += 1
         
-        # Move to next slot
-        current_start = slot_end
+        # Move to the next slot
+        current_start = current_end
     
-    # If slots were created, save them
-    if slots_created > 0:
-        all_slots = existing_slots + new_slots
-        _save_therapist_slots(therapist_id, all_slots)
-        logger.info(f"Created {slots_created} slots for therapist {therapist_id}")
-        return True
-    
-    logger.warning(f"No slots created for therapist {therapist_id}")
-    return False
+    logger.info(f"Created {slots_created} slots for therapist {therapist_id} in range {start_time} to {end_time}")
+    return slots_created > 0
 
 
 def list_available_slots(therapist_id: str, search_date: date) -> List[TimeSlot]:
@@ -248,33 +228,33 @@ def list_all_slots(therapist_id: str, search_date: date) -> List[TimeSlot]:
     # Get slots
     slots = _get_therapist_slots(therapist_id)
     
-    # Filter slots by date only, not by status
-    all_slots = []
+    # Filter slots by date
+    filtered_slots = []
     for slot_dict in slots:
         slot = TimeSlot.from_dict(slot_dict)
         slot_date = slot.start_time.date()
         
         if slot_date == search_date:
-            all_slots.append(slot)
+            filtered_slots.append(slot)
     
-    return all_slots
+    return filtered_slots
 
 
 def book_slot(therapist_id: str, slot_time: datetime) -> bool:
     """
-    Book a slot with a therapist.
+    Book a slot for a therapist.
     
     Args:
         therapist_id: Unique identifier for the therapist
         slot_time: Start time of the slot to book
         
     Returns:
-        bool: True if booking was successful, False otherwise
+        bool: True if slot was booked successfully, False otherwise
     """
     # Get slots
     slots = _get_therapist_slots(therapist_id)
     
-    # Find and update the slot
+    # Find the slot to book
     for i, slot_dict in enumerate(slots):
         slot = TimeSlot.from_dict(slot_dict)
         
@@ -282,34 +262,38 @@ def book_slot(therapist_id: str, slot_time: datetime) -> bool:
         if slot.start_time == slot_time:
             # Check if slot is already booked
             if slot.status == "busy":
-                logger.info(f"Booking failed for therapist {therapist_id}: slot already booked")
+                logger.info(f"Slot booking failed for therapist {therapist_id}: slot is already booked")
                 return False
             
-            # Update slot status to busy
-            slots[i]["status"] = "busy"
+            # Update the slot status to booked
+            slot.status = "busy"
+            slots[i] = slot.to_dict()
+            
+            # Save updated slots
             _save_therapist_slots(therapist_id, slots)
             logger.info(f"Slot booked successfully for therapist {therapist_id}")
+            
             return True
     
-    logger.info(f"Booking failed for therapist {therapist_id}: slot not found")
-    return False  # Slot not found
+    logger.info(f"Slot booking failed for therapist {therapist_id}: slot not found")
+    return False
 
 
 def cancel_booking(therapist_id: str, slot_time: datetime) -> bool:
     """
-    Cancel a booked slot.
+    Cancel a booking for a therapist.
     
     Args:
         therapist_id: Unique identifier for the therapist
-        slot_time: Start time of the booked slot
+        slot_time: Start time of the slot to cancel
         
     Returns:
-        bool: True if cancellation was successful, False otherwise
+        bool: True if booking was canceled successfully, False otherwise
     """
     # Get slots
     slots = _get_therapist_slots(therapist_id)
     
-    # Find and update the slot
+    # Find the slot to cancel
     for i, slot_dict in enumerate(slots):
         slot = TimeSlot.from_dict(slot_dict)
         
@@ -317,14 +301,18 @@ def cancel_booking(therapist_id: str, slot_time: datetime) -> bool:
         if slot.start_time == slot_time:
             # Check if slot is actually booked
             if slot.status == "free":
-                logger.info(f"Cancellation failed for therapist {therapist_id}: slot is not booked")
+                logger.info(f"Booking cancellation failed for therapist {therapist_id}: slot is not booked")
                 return False
             
-            # Update slot status to free
-            slots[i]["status"] = "free"
+            # Update the slot status to free
+            slot.status = "free"
+            slots[i] = slot.to_dict()
+            
+            # Save updated slots
             _save_therapist_slots(therapist_id, slots)
-            logger.info(f"Booking cancelled successfully for therapist {therapist_id}")
+            logger.info(f"Booking canceled successfully for therapist {therapist_id}")
+            
             return True
     
-    logger.info(f"Cancellation failed for therapist {therapist_id}: slot not found")
-    return False  # Slot not found 
+    logger.info(f"Booking cancellation failed for therapist {therapist_id}: slot not found")
+    return False 
