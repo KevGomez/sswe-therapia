@@ -2,6 +2,10 @@
 
 A Flask-based web application for managing therapist-client appointments.
 
+## Demo
+
+- URL: `https://drive.google.com/file/d/1BXs6D-pzsd7Zs7q9b-IiEikLRGCWqClN/view?usp=share_link`
+
 ## Features
 
 - Therapists can create availability slots individually or in time ranges
