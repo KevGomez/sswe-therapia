@@ -1,35 +1,18 @@
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 import os
-import streamlit as st  # Import streamlit
 from dotenv import load_dotenv
 
-# Load environment variables for local development
-if not hasattr(st, 'secrets'):  # Only load dotenv if not running in Streamlit Cloud
-    load_dotenv()
+# Load environment variables
+load_dotenv()
 
 import firebase_admin
 from firebase_admin import credentials, db
 
-# Helper function to get Firebase credentials
-def get_firebase_credentials():
-    # Try to get from Streamlit secrets first
-    if hasattr(st, 'secrets') and 'firebase' in st.secrets:
-        return {
-            "type": "service_account",
-            "project_id": "sansa-sswe-kevin",
-            "private_key_id": st.secrets.firebase.FIREBASE_PRIVATE_KEY_ID,
-            "private_key": st.secrets.firebase.FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
-            "client_email": st.secrets.firebase.FIREBASE_CLIENT_EMAIL,
-            "client_id": st.secrets.firebase.FIREBASE_CLIENT_ID,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": st.secrets.firebase.FIREBASE_CLIENT_CERT_URL
-        }
-    # Fall back to environment variables
-    else:
-        return {
+# Initialize Firebase if not already initialized
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate({
             "type": "service_account",
             "project_id": "sansa-sswe-kevin",
             "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
@@ -40,12 +23,7 @@ def get_firebase_credentials():
             "token_uri": "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
-        }
-
-# Initialize Firebase if not already initialized
-if not firebase_admin._apps:
-    try:
-        cred = credentials.Certificate(get_firebase_credentials())
+        })
         firebase_admin.initialize_app(cred, {
             'databaseURL': 'https://sansa-sswe-kevin-default-rtdb.firebaseio.com/'
         })
@@ -84,34 +62,34 @@ def _get_therapist_slots(therapist_id: str) -> List[Dict[str, Any]]:
     try:
         therapist_ref = db_ref.child(therapist_id)
         slots_data = therapist_ref.get()
-        print(f"[GCal] Retrieved slots for therapist {therapist_id}: {slots_data}")
+        print(f"Retrieved slots for therapist {therapist_id}: {slots_data}")
         if slots_data is None:
             return []
         if isinstance(slots_data, list):
             return slots_data
         # If it's not a list, return an empty list to maintain type safety
-        print(f"[GCal] Warning: Unexpected data format. Expected list, got {type(slots_data)}")
+        print(f"Warning: Unexpected data format. Expected list, got {type(slots_data)}")
         return []
     except Exception as e:
-        print(f"[GCal] Error getting slots: {e}")
+        print(f"Error getting slots: {e}")
         return []
 
 
 def _save_therapist_slots(therapist_id: str, slots: List[Dict[str, Any]]) -> None:
     """Save all slots for a therapist to Firebase"""
     try:
-        print(f"[GCal] Attempting to save slots for therapist {therapist_id}")
-        print(f"[GCal] Data to save: {slots}")
+        print(f"Attempting to save slots for therapist {therapist_id}")
+        print(f"Data to save: {slots}")
         therapist_ref = db_ref.child(therapist_id)
         therapist_ref.set(slots)
         # Verify the data was saved
         saved_data = therapist_ref.get()
-        print(f"[GCal] Verified saved data: {saved_data}")
+        print(f"Verified saved data: {saved_data}")
         if saved_data != slots:
-            print("[GCal] Warning: Saved data does not match input data")
+            print("Warning: Saved data does not match input data")
     except Exception as e:
-        print(f"[GCal] Error saving slots: {str(e)}")
-        print(f"[GCal] Error type: {type(e)}")
+        print(f"Error saving slots: {str(e)}")
+        print(f"Error type: {type(e)}")
         raise
 
 

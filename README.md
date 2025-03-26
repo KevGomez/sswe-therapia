@@ -9,7 +9,7 @@ A Flask-based API for managing therapist-client appointments.
 - Clients can book available slots with a specific therapist
 - Double bookings are prevented
 - Clients can cancel existing appointments
-- Interfaces via REST API, CLI, and Streamlit UI
+- Interfaces via REST API and CLI
 - Firebase Realtime Database integration
 
 ## Tech Stack
@@ -18,7 +18,6 @@ A Flask-based API for managing therapist-client appointments.
 - Flask (Web framework)
 - Pydantic (Data validation and settings management)
 - Firebase Admin SDK (Database)
-- Streamlit (User Interface)
 
 ## Prerequisites
 
@@ -231,25 +230,6 @@ python cli.py book-slot therapist123 "2023-06-01T10:00:00"
 # Cancel a booking
 python cli.py cancel-booking therapist123 "2023-06-01T10:00:00"
 ```
-
-## Streamlit UI
-
-The application includes a Streamlit-based user interface for easy interaction with the scheduling system.
-
-### Running the Streamlit UI
-
-```bash
-# Make sure you have activated your virtual environment and installed all requirements
-streamlit run streamlit_app.py
-```
-
-The Streamlit UI provides a user-friendly interface for:
-
-- Therapists to manage their available time slots
-- Clients to view and book appointments
-- Both parties to manage existing bookings
-
-The UI is responsive and provides real-time feedback on all operations, making the scheduling process simple and intuitive.
 
 ## Data Storage
 
