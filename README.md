@@ -76,14 +76,14 @@ A Flask-based API for managing therapist-client appointments.
    python main.py
    ```
 
-By default, the application runs on `http://0.0.0.0:5000`.
+By default, the application runs on `http://0.0.0.0:5001`.
 
 ## Environment Variables
 
 You can customize the application using the following environment variables:
 
 - `FLASK_HOST`: Host to run the server on (default: "0.0.0.0")
-- `FLASK_PORT`: Port to run the server on (default: 5000)
+- `FLASK_PORT`: Port to run the server on (default: 5001)
 - `FLASK_DEBUG`: Enable debug mode (default: True)
 - `SECRET_KEY`: Flask secret key (default: "dev")
 - Firebase credentials (required):
