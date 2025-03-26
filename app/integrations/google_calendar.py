@@ -1,47 +1,49 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 import os
-from dotenv import load_dotenv
+import logging
 
-# Load environment variables
-load_dotenv()
+# Configure logging
+logger = logging.getLogger(__name__)
 
 import firebase_admin
 from firebase_admin import credentials, db
 
+from app.config import active_config
+
 # Initialize Firebase if not already initialized
 if not firebase_admin._apps:
     try:
-        cred = credentials.Certificate({
-            "type": "service_account",
-            "project_id": "sansa-sswe-kevin",
-            "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-            "private_key": os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n"),
-            "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-            "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
-        })
+        cred = credentials.Certificate(active_config.get_firebase_credentials())
         firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://sansa-sswe-kevin-default-rtdb.firebaseio.com/'
+            'databaseURL': active_config.get_database_url()
         })
-        print("Firebase initialized successfully in google_calendar.py")
+        logger.info("Firebase initialized successfully in google_calendar.py")
     except Exception as e:
-        print(f"Error initializing Firebase in google_calendar.py: {e}")
+        logger.error(f"Error initializing Firebase in google_calendar.py: {e}")
         raise
 
 # Get a reference to the database
 db_ref = db.reference('appointments')
 
 class TimeSlot:
+    """Represents a time slot for a therapist appointment."""
+    
     def __init__(self, start_time: datetime, end_time: datetime, status: str = "free"):
+        """
+        Initialize a new TimeSlot.
+        
+        Args:
+            start_time: Start time of the appointment slot
+            end_time: End time of the appointment slot
+            status: Status of the slot - 'free' or 'busy'
+        """
         self.start_time = start_time
         self.end_time = end_time
         self.status = status  # 'free' or 'busy'
     
     def to_dict(self) -> Dict[str, Any]:
+        """Convert the TimeSlot to a dictionary for storage."""
         return {
             "start_time": self.start_time.isoformat(),
             "end_time": self.end_time.isoformat(),
@@ -50,6 +52,7 @@ class TimeSlot:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'TimeSlot':
+        """Create a TimeSlot from a dictionary."""
         return cls(
             start_time=datetime.fromisoformat(data["start_time"]),
             end_time=datetime.fromisoformat(data["end_time"]),
@@ -58,44 +61,61 @@ class TimeSlot:
 
 
 def _get_therapist_slots(therapist_id: str) -> List[Dict[str, Any]]:
-    """Get all slots for a therapist from Firebase"""
+    """
+    Get all slots for a therapist from Firebase.
+    
+    Args:
+        therapist_id: Unique identifier for the therapist
+    
+    Returns:
+        List of slot dictionaries
+    """
     try:
         therapist_ref = db_ref.child(therapist_id)
         slots_data = therapist_ref.get()
-        print(f"Retrieved slots for therapist {therapist_id}: {slots_data}")
+        
         if slots_data is None:
             return []
+            
         if isinstance(slots_data, list):
             return slots_data
+            
         # If it's not a list, return an empty list to maintain type safety
-        print(f"Warning: Unexpected data format. Expected list, got {type(slots_data)}")
+        logger.warning(f"Unexpected data format for therapist {therapist_id}. Expected list, got {type(slots_data)}")
         return []
     except Exception as e:
-        print(f"Error getting slots: {e}")
+        logger.error(f"Error getting slots for therapist {therapist_id}: {e}")
         return []
 
 
 def _save_therapist_slots(therapist_id: str, slots: List[Dict[str, Any]]) -> None:
-    """Save all slots for a therapist to Firebase"""
+    """
+    Save all slots for a therapist to Firebase.
+    
+    Args:
+        therapist_id: Unique identifier for the therapist
+        slots: List of slot dictionaries to save
+    
+    Raises:
+        Exception: If there's an error saving the slots
+    """
     try:
-        print(f"Attempting to save slots for therapist {therapist_id}")
-        print(f"Data to save: {slots}")
+        logger.debug(f"Saving slots for therapist {therapist_id}")
         therapist_ref = db_ref.child(therapist_id)
         therapist_ref.set(slots)
+        
         # Verify the data was saved
         saved_data = therapist_ref.get()
-        print(f"Verified saved data: {saved_data}")
         if saved_data != slots:
-            print("Warning: Saved data does not match input data")
+            logger.warning(f"Data verification failed for therapist {therapist_id}: saved data does not match input data")
     except Exception as e:
-        print(f"Error saving slots: {str(e)}")
-        print(f"Error type: {type(e)}")
+        logger.error(f"Error saving slots for therapist {therapist_id}: {e}")
         raise
 
 
 def create_free_slot(therapist_id: str, start_time: datetime, end_time: datetime) -> bool:
     """
-    Create a free slot for a therapist in the calendar
+    Create a free slot for a therapist in the calendar.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -113,6 +133,7 @@ def create_free_slot(therapist_id: str, start_time: datetime, end_time: datetime
         slot = TimeSlot.from_dict(slot_dict)
         # Check if new slot overlaps with existing slots
         if (start_time < slot.end_time and end_time > slot.start_time):
+            logger.info(f"Slot creation failed for therapist {therapist_id}: overlapping slot found")
             return False  # Overlapping slot
     
     # Create new slot
@@ -121,13 +142,75 @@ def create_free_slot(therapist_id: str, start_time: datetime, end_time: datetime
     
     # Save updated slots
     _save_therapist_slots(therapist_id, slots)
+    logger.info(f"Slot created successfully for therapist {therapist_id}")
     
     return True
 
 
+def create_availability_range(therapist_id: str, start_time: datetime, end_time: datetime, slot_duration_minutes: int = 60) -> bool:
+    """
+    Create multiple free slots within a time range for a therapist.
+    
+    Args:
+        therapist_id: Unique identifier for the therapist
+        start_time: Start time of the availability range
+        end_time: End time of the availability range
+        slot_duration_minutes: Duration of each slot in minutes (default is 60)
+        
+    Returns:
+        bool: True if all slots were created successfully, False otherwise
+    """
+    logger.info(f"Creating availability range for therapist {therapist_id} from {start_time} to {end_time}")
+    
+    # Calculate time slots
+    current_start = start_time
+    slots_created = 0
+    
+    # Get existing slots
+    existing_slots = _get_therapist_slots(therapist_id)
+    new_slots = []
+    
+    # Create slot objects for the entire range
+    while current_start < end_time:
+        slot_end = current_start + timedelta(minutes=slot_duration_minutes)
+        
+        # Make sure we don't go beyond the end time
+        if slot_end > end_time:
+            slot_end = end_time
+            
+        # Only create complete slots if they are at least the minimum duration
+        if (slot_end - current_start).total_seconds() / 60 >= slot_duration_minutes:
+            # Check for overlap with existing slots
+            is_overlapping = False
+            for slot_dict in existing_slots:
+                slot = TimeSlot.from_dict(slot_dict)
+                if (current_start < slot.end_time and slot_end > slot.start_time):
+                    is_overlapping = True
+                    logger.warning(f"Skipping overlapping slot: {current_start} - {slot_end}")
+                    break
+            
+            if not is_overlapping:
+                new_slot = TimeSlot(start_time=current_start, end_time=slot_end)
+                new_slots.append(new_slot.to_dict())
+                slots_created += 1
+        
+        # Move to next slot
+        current_start = slot_end
+    
+    # If slots were created, save them
+    if slots_created > 0:
+        all_slots = existing_slots + new_slots
+        _save_therapist_slots(therapist_id, all_slots)
+        logger.info(f"Created {slots_created} slots for therapist {therapist_id}")
+        return True
+    
+    logger.warning(f"No slots created for therapist {therapist_id}")
+    return False
+
+
 def list_available_slots(therapist_id: str, search_date: date) -> List[TimeSlot]:
     """
-    List available (free) slots for a therapist on a specific date
+    List available (free) slots for a therapist on a specific date.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -151,9 +234,35 @@ def list_available_slots(therapist_id: str, search_date: date) -> List[TimeSlot]
     return available_slots
 
 
+def list_all_slots(therapist_id: str, search_date: date) -> List[TimeSlot]:
+    """
+    List all slots (both free and busy) for a therapist on a specific date.
+    
+    Args:
+        therapist_id: Unique identifier for the therapist
+        search_date: Date to search for slots
+        
+    Returns:
+        List[TimeSlot]: List of all time slots
+    """
+    # Get slots
+    slots = _get_therapist_slots(therapist_id)
+    
+    # Filter slots by date only, not by status
+    all_slots = []
+    for slot_dict in slots:
+        slot = TimeSlot.from_dict(slot_dict)
+        slot_date = slot.start_time.date()
+        
+        if slot_date == search_date:
+            all_slots.append(slot)
+    
+    return all_slots
+
+
 def book_slot(therapist_id: str, slot_time: datetime) -> bool:
     """
-    Book a slot with a therapist
+    Book a slot with a therapist.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -173,19 +282,22 @@ def book_slot(therapist_id: str, slot_time: datetime) -> bool:
         if slot.start_time == slot_time:
             # Check if slot is already booked
             if slot.status == "busy":
+                logger.info(f"Booking failed for therapist {therapist_id}: slot already booked")
                 return False
             
             # Update slot status to busy
             slots[i]["status"] = "busy"
             _save_therapist_slots(therapist_id, slots)
+            logger.info(f"Slot booked successfully for therapist {therapist_id}")
             return True
     
+    logger.info(f"Booking failed for therapist {therapist_id}: slot not found")
     return False  # Slot not found
 
 
 def cancel_booking(therapist_id: str, slot_time: datetime) -> bool:
     """
-    Cancel a booked slot
+    Cancel a booked slot.
     
     Args:
         therapist_id: Unique identifier for the therapist
@@ -205,11 +317,14 @@ def cancel_booking(therapist_id: str, slot_time: datetime) -> bool:
         if slot.start_time == slot_time:
             # Check if slot is actually booked
             if slot.status == "free":
+                logger.info(f"Cancellation failed for therapist {therapist_id}: slot is not booked")
                 return False
             
             # Update slot status to free
             slots[i]["status"] = "free"
             _save_therapist_slots(therapist_id, slots)
+            logger.info(f"Booking cancelled successfully for therapist {therapist_id}")
             return True
     
+    logger.info(f"Cancellation failed for therapist {therapist_id}: slot not found")
     return False  # Slot not found 

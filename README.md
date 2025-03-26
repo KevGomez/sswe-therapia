@@ -9,7 +9,7 @@ A Flask-based API for managing therapist-client appointments.
 - Clients can book available slots with a specific therapist
 - Double bookings are prevented
 - Clients can cancel existing appointments
-- Interfaces via REST API and CLI
+- Interfaces via REST API, CLI, and Web UI
 - Firebase Realtime Database integration
 
 ## Tech Stack
@@ -18,6 +18,7 @@ A Flask-based API for managing therapist-client appointments.
 - Flask (Web framework)
 - Pydantic (Data validation and settings management)
 - Firebase Admin SDK (Database)
+- Bootstrap 5 (UI components)
 
 ## Prerequisites
 
@@ -91,6 +92,29 @@ You can customize the application using the following environment variables:
   - `FIREBASE_CLIENT_EMAIL`
   - `FIREBASE_CLIENT_ID`
   - `FIREBASE_CLIENT_CERT_URL`
+
+## Web User Interface
+
+The application provides a web-based user interface with separate portals for therapists and clients:
+
+### Home Page
+
+- Overview of the system
+- Links to both therapist and client portals
+
+### Therapist Portal
+
+- Create new availability slots by specifying date and time
+- View existing slots for specific dates
+- Monitor booking status of all slots
+
+### Client Portal
+
+- Search for available slots by therapist and date
+- Book appointments with one-click booking
+- Cancel existing bookings
+
+Access the UI by navigating to `http://0.0.0.0:5001/` in your web browser after starting the application.
 
 ## API Endpoints
 

@@ -1,0 +1,519 @@
+{% extends "base.html" %} {% block title %}Client Portal{% endblock %} {% block
+content %}
+<div class="row mt-4">
+  <div class="col-md-12">
+    <h2><i class="fas fa-user me-2"></i>Client Portal</h2>
+    <p class="text-muted">
+      Book and manage your therapy appointments with ease.
+    </p>
+    <hr class="my-4" />
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-5">
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-user-md me-2"></i>
+        <span>Available Therapists</span>
+      </div>
+      <div class="card-body">
+        <form id="therapists-search-form">
+          <div class="mb-3">
+            <label for="therapists_date" class="form-label">
+              <i class="far fa-calendar-alt me-1"></i> Select Date
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="therapists_date"
+              min=""
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">
+              <i class="fas fa-id-card me-1"></i> Therapist IDs
+            </label>
+            <div class="form-text mb-2">
+              Enter therapist IDs separated by commas.
+            </div>
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                id="therapists_ids"
+                placeholder="123, therapist123, etc."
+                required
+              />
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-1"></i> Search
+              </button>
+            </div>
+          </div>
+        </form>
+        <div id="therapists-container" class="mt-3">
+          <div class="text-center py-4 text-muted">
+            <i class="fas fa-user-md fa-2x mb-3"></i>
+            <p>Search for available therapists on a specific date.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-search me-2"></i>
+        <span>Find Available Slots</span>
+      </div>
+      <div class="card-body">
+        <form id="find-slots-form">
+          <div class="mb-3">
+            <label for="find_therapist_id" class="form-label">
+              <i class="fas fa-user-md me-1"></i> Therapist ID
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="find_therapist_id"
+              placeholder="Enter therapist ID"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="find_date" class="form-label">
+              <i class="far fa-calendar-alt me-1"></i> Select Date
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="find_date"
+              min=""
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-search me-2"></i>Find Available Slots
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-calendar-day me-2"></i>
+        <span>Therapist Availability</span>
+      </div>
+      <div class="card-body">
+        <div id="available-slots-container">
+          <div class="text-center py-5 text-muted">
+            <i class="fas fa-calendar-check fa-3x mb-3"></i>
+            <p>Select a therapist and date to view available slots.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-book-medical me-2"></i>
+        <span>Book Appointment</span>
+      </div>
+      <div class="card-body">
+        <form id="book-slot-form">
+          <div class="mb-3">
+            <label for="book_therapist_id" class="form-label">
+              <i class="fas fa-user-md me-1"></i> Therapist ID
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="book_therapist_id"
+              placeholder="Enter therapist ID"
+              required
+              readonly
+            />
+            <div class="form-text">
+              This field will be filled automatically when you select a slot
+              above.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="book_slot_time" class="form-label">
+              <i class="far fa-clock me-1"></i> Slot Time
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="book_slot_time"
+              placeholder="Slot time will appear here"
+              required
+              readonly
+            />
+            <div class="form-text">
+              This field will be filled automatically when you select a slot
+              above.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="client_name" class="form-label">
+              <i class="fas fa-user me-1"></i> Your Name
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="client_name"
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="client_email" class="form-label">
+              <i class="fas fa-envelope me-1"></i> Your Email
+            </label>
+            <input
+              type="email"
+              class="form-control"
+              id="client_email"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-success w-100"
+            id="book-button"
+            disabled
+          >
+            <i class="fas fa-calendar-check me-2"></i>Book Appointment
+          </button>
+        </form>
+        <div id="book-result-message" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+  // Set min date to today for all date inputs
+  document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("therapists_date").min = today;
+    document.getElementById("find_date").min = today;
+  });
+
+  // Handle therapist search form
+  document
+    .getElementById("therapists-search-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const searchDate = document.getElementById("therapists_date").value;
+      const therapistIds = document.getElementById("therapists_ids").value;
+
+      if (!searchDate || !therapistIds) {
+        return;
+      }
+
+      // Show loading state
+      document.getElementById("therapists-container").innerHTML =
+        '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading therapist data...</p></div>';
+
+      // Prepare the therapist IDs (remove whitespace)
+      const cleanTherapistIds = therapistIds
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+        .join(",");
+
+      fetch(
+        `/api/appointments/therapists?date=${searchDate}&therapist_ids=${cleanTherapistIds}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          const therapistsContainer = document.getElementById(
+            "therapists-container"
+          );
+
+          if (data.success) {
+            // Check if we have any therapists
+            if (!data.therapists || data.therapists.length === 0) {
+              therapistsContainer.innerHTML = `<div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No therapists found with available slots on this date.
+              </div>`;
+              return;
+            }
+
+            // Format the date for display
+            const displayDate = new Date(data.date).toLocaleDateString(
+              undefined,
+              {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            );
+
+            let html = `<h5 class="mb-3"><i class="fas fa-calendar-day me-2"></i>Available Therapists for ${displayDate}</h5>`;
+
+            // Create therapist cards
+            html += '<div class="list-group">';
+
+            data.therapists
+              .sort((a, b) => {
+                // Sort by available slots (descending)
+                return b.available_slots - a.available_slots;
+              })
+              .forEach((therapist) => {
+                const availabilityPercent =
+                  therapist.total_slots > 0
+                    ? Math.round(
+                        (therapist.available_slots / therapist.total_slots) *
+                          100
+                      )
+                    : 0;
+
+                html += `<a href="#" class="list-group-item list-group-item-action select-therapist" data-therapist="${therapist.therapist_id}" data-date="${data.date}">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                  <div>
+                    <h5 class="mb-1"><i class="fas fa-user-md me-2"></i>Therapist ${therapist.therapist_id}</h5>
+                    <div class="d-flex align-items-center mt-2">
+                      <span class="badge bg-success me-2">${therapist.available_slots} Available</span>
+                      <span class="badge bg-secondary me-2">${therapist.booked_slots} Booked</span>
+                      <div class="progress flex-grow-1" style="height: 8px; min-width: 100px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: ${availabilityPercent}%;" 
+                            aria-valuenow="${availabilityPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-calendar-alt me-1"></i> View Slots
+                  </button>
+                </div>
+              </a>`;
+              });
+
+            html += "</div>";
+
+            therapistsContainer.innerHTML = html;
+
+            // Add click handlers for therapist selection
+            document.querySelectorAll(".select-therapist").forEach((item) => {
+              item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Get therapist ID and date
+                const therapistId = this.getAttribute("data-therapist");
+                const date = this.getAttribute("data-date");
+
+                // Set the values in the find slot form
+                document.getElementById("find_therapist_id").value =
+                  therapistId;
+                document.getElementById("find_date").value = date;
+
+                // Trigger the form submission to search for slots
+                document
+                  .getElementById("find-slots-form")
+                  .dispatchEvent(new Event("submit"));
+
+                // Scroll to the slots section
+                document
+                  .getElementById("available-slots-container")
+                  .scrollIntoView({ behavior: "smooth" });
+              });
+            });
+          } else {
+            therapistsContainer.innerHTML = `<div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle me-2"></i>${
+                data.message || "Error finding therapists"
+              }
+            </div>`;
+          }
+        })
+        .catch((error) => {
+          document.getElementById(
+            "therapists-container"
+          ).innerHTML = `<div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}
+          </div>`;
+        });
+    });
+
+  // Handle finding available slots
+  document
+    .getElementById("find-slots-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const therapistId = document.getElementById("find_therapist_id").value;
+      const findDate = document.getElementById("find_date").value;
+
+      // Show loading state
+      document.getElementById("available-slots-container").innerHTML =
+        '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading available slots...</p></div>';
+
+      fetch(`/api/appointments/therapist/${therapistId}/slots?date=${findDate}`)
+        .then((response) => response.json())
+        .then((data) => {
+          const slotsContainer = document.getElementById(
+            "available-slots-container"
+          );
+          if (data.success && data.slots) {
+            if (data.slots.length === 0) {
+              slotsContainer.innerHTML =
+                '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No available slots for this date.</div>';
+              return;
+            }
+
+            // Filter to only show free slots
+            const freeSlots = data.slots.filter(
+              (slot) => slot.status === "free"
+            );
+
+            if (freeSlots.length === 0) {
+              slotsContainer.innerHTML =
+                '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>All slots are booked for this date.</div>';
+              return;
+            }
+
+            const date = new Date(freeSlots[0].start_time).toLocaleDateString(
+              undefined,
+              {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            );
+
+            let html = `<h5 class="section-title"><i class="far fa-calendar-check me-2"></i>Available Slots for ${date}</h5>`;
+
+            // Add summary stats
+            html += `<div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Therapist ${therapistId}</strong> has <strong>${freeSlots.length}</strong> available slots for this date.
+            </div>`;
+
+            html += '<div class="list-group">';
+
+            freeSlots.forEach((slot) => {
+              const startTime = new Date(slot.start_time).toLocaleTimeString(
+                [],
+                { hour: "2-digit", minute: "2-digit" }
+              );
+              const endTime = new Date(slot.end_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              html += `<div class="list-group-item list-group-item-action">`;
+              html += `<div class="d-flex w-100 justify-content-between align-items-center">`;
+              html += `<div>`;
+              html += `<h5 class="mb-1"><i class="far fa-clock me-2"></i>${startTime} - ${endTime}</h5>`;
+              html += `<small class="text-muted">ISO Time: ${slot.start_time}</small>`;
+              html += `</div>`;
+              html += `<button class="btn btn-outline-success book-btn" 
+                              data-therapist="${therapistId}" 
+                              data-time="${slot.start_time}">
+                              <i class="fas fa-calendar-check me-1"></i> Book
+                      </button>`;
+              html += `</div>`;
+              html += `</div>`;
+            });
+
+            html += "</div>";
+            slotsContainer.innerHTML = html;
+
+            // Add event listeners to the book buttons
+            document.querySelectorAll(".book-btn").forEach((button) => {
+              button.addEventListener("click", function () {
+                document.getElementById("book_therapist_id").value =
+                  this.getAttribute("data-therapist");
+                document.getElementById("book_slot_time").value =
+                  this.getAttribute("data-time");
+
+                // Enable the book button
+                document.getElementById("book-button").disabled = false;
+
+                // Scroll to the booking form
+                document
+                  .getElementById("book-slot-form")
+                  .scrollIntoView({ behavior: "smooth" });
+              });
+            });
+          } else {
+            slotsContainer.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${
+              data.message || "Error fetching available slots"
+            }</div>`;
+          }
+        })
+        .catch((error) => {
+          document.getElementById(
+            "available-slots-container"
+          ).innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    });
+
+  document
+    .getElementById("book-slot-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const therapistId = document.getElementById("book_therapist_id").value;
+      const slotTime = document.getElementById("book_slot_time").value;
+      const resultDiv = document.getElementById("book-result-message");
+
+      // Validate form fields
+      if (!therapistId || !slotTime) {
+        resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Please select a slot first.</div>`;
+        return;
+      }
+
+      // Show loading state
+      resultDiv.innerHTML =
+        '<div class="text-center"><div class="spinner-border text-primary spinner-border-sm" role="status"></div> Processing...</div>';
+
+      fetch("/api/appointments/book", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          therapist_id: therapistId,
+          slot_time: slotTime,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+
+            // Clear form fields
+            document.getElementById("client_name").value = "";
+            document.getElementById("client_email").value = "";
+            document.getElementById("book_therapist_id").value = "";
+            document.getElementById("book_slot_time").value = "";
+
+            // Disable book button
+            document.getElementById("book-button").disabled = true;
+
+            // Refresh available slots for the selected therapist
+            document
+              .getElementById("find-slots-form")
+              .dispatchEvent(new Event("submit"));
+          } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${
+              data.message || "Error booking appointment"
+            }</div>`;
+          }
+        })
+        .catch((error) => {
+          resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block content %}
+<div class="row mt-5">
+  <div class="col-md-12 text-center">
+    <h1>Welcome to Therapist-Client Scheduling System</h1>
+    <p class="lead">Manage therapist appointments easily and efficiently</p>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Therapist Portal</h5>
+        <p class="card-text">
+          Create and manage availability slots for client bookings.
+        </p>
+        <a href="/therapist" class="btn btn-primary">Go to Therapist Portal</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Client Portal</h5>
+        <p class="card-text">
+          View available slots, book appointments, and manage bookings.
+        </p>
+        <a href="/client" class="btn btn-success">Go to Client Portal</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">About This System</h5>
+        <p class="card-text">
+          This scheduling system allows therapists to create available time
+          slots for appointments, and clients to book those slots. The system
+          prevents double bookings and allows for easy management of
+          appointments.
+        </p>
+        <ul>
+          <li>Therapists can create 1-hour slots</li>
+          <li>Clients can view available slots by date</li>
+          <li>Clients can book and cancel appointments</li>
+          <li>All data is stored securely in Firebase</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

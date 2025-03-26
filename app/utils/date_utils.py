@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Tuple
 
 
@@ -28,6 +28,13 @@ def is_valid_appointment_slot(start_time: datetime, end_time: datetime) -> Tuple
     if end_time.minute != 0 or end_time.second != 0 or end_time.microsecond != 0:
         return False, "End time must be rounded to the hour"
     
+    # Check if times are in the future
+    current_time = datetime.now()
+    current_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    if start_time.date() < current_date.date():
+        return False, "Start time must be in the future"
+    
     return True, ""
 
 
@@ -42,7 +49,15 @@ def is_valid_booking_time(slot_time: datetime) -> Tuple[bool, str]:
         Tuple[bool, str]: (is_valid, error_message)
     """
     # Check if time is in the future
-    if slot_time <= datetime.now():
+    current_time = datetime.now()
+    current_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Compare dates first
+    if slot_time.date() < current_date.date():
+        return False, "Booking time must be in the future"
+    
+    # If it's today, check the hour
+    if slot_time.date() == current_date.date() and slot_time.hour <= current_time.hour:
         return False, "Booking time must be in the future"
     
     # Check if time is rounded to the hour

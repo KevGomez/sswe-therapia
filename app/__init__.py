@@ -1,6 +1,7 @@
-from flask import Flask
+from flask import Flask, render_template
 from pathlib import Path
 import os
+from datetime import datetime
 
 from app.routes import appointment_bp
 
@@ -33,9 +34,22 @@ def create_app(test_config=None):
     # Register blueprints
     app.register_blueprint(appointment_bp)
 
-    # Simple index route
+    # UI Routes
     @app.route('/')
     def index():
+        return render_template('index.html')
+    
+    @app.route('/therapist')
+    def therapist_portal():
+        return render_template('therapist.html')
+    
+    @app.route('/client')
+    def client_portal():
+        return render_template('client.html')
+
+    # API index route
+    @app.route('/api')
+    def api_index():
         return {
             "message": "Welcome to the Therapist-Client Scheduling API",
             "endpoints": {

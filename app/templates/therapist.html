@@ -1,0 +1,749 @@
+{% extends "base.html" %} {% block title %}Therapist Portal{% endblock %} {%
+block content %}
+<div class="row mt-4">
+  <div class="col-md-12">
+    <h2><i class="fas fa-user-md me-2"></i>Therapist Portal</h2>
+    <p class="text-muted">
+      Create and manage your availability slots for client bookings.
+    </p>
+    <hr class="my-4" />
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-5">
+    <ul class="nav nav-tabs mb-3" id="create-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active"
+          id="single-slot-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#single-slot"
+          type="button"
+          role="tab"
+          aria-controls="single-slot"
+          aria-selected="true"
+        >
+          <i class="fas fa-clock me-1"></i> Single Slot
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="time-range-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#time-range"
+          type="button"
+          role="tab"
+          aria-controls="time-range"
+          aria-selected="false"
+        >
+          <i class="fas fa-calendar-alt me-1"></i> Time Range
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="create-tabs-content">
+      <!-- Single Slot Tab -->
+      <div
+        class="tab-pane fade show active"
+        id="single-slot"
+        role="tabpanel"
+        aria-labelledby="single-slot-tab"
+      >
+        <div class="card">
+          <div class="card-header d-flex align-items-center">
+            <i class="fas fa-plus-circle me-2"></i>
+            <span>Create Single Availability Slot</span>
+          </div>
+          <div class="card-body">
+            <form id="create-slot-form">
+              <div class="mb-3">
+                <label for="therapist_id" class="form-label">
+                  <i class="fas fa-id-card me-1"></i> Therapist ID
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="therapist_id"
+                  placeholder="Enter your therapist ID"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="slot_date" class="form-label">
+                  <i class="far fa-calendar-alt me-1"></i> Select Date
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="slot_date"
+                  min=""
+                  required
+                />
+                <div class="form-text">
+                  Only future dates can be selected for creating slots.
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="slot_time" class="form-label">
+                  <i class="far fa-clock me-1"></i> Select Hour
+                </label>
+                <select
+                  class="form-control form-select"
+                  id="slot_time"
+                  required
+                >
+                  <option value="">Choose an hour...</option>
+                  {% for hour in range(8, 21) %}
+                  <option value="{{ '%02d' % hour }}:00">
+                    {{ '%02d' % hour }}:00
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">All slots are one hour in duration.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-calendar-plus me-2"></i>Create Single Slot
+              </button>
+            </form>
+            <div id="result-message" class="mt-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Range Tab -->
+      <div
+        class="tab-pane fade"
+        id="time-range"
+        role="tabpanel"
+        aria-labelledby="time-range-tab"
+      >
+        <div class="card">
+          <div class="card-header d-flex align-items-center">
+            <i class="fas fa-calendar-week me-2"></i>
+            <span>Create Availability Time Range</span>
+          </div>
+          <div class="card-body">
+            <form id="create-range-form">
+              <div class="mb-3">
+                <label for="range_therapist_id" class="form-label">
+                  <i class="fas fa-id-card me-1"></i> Therapist ID
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="range_therapist_id"
+                  placeholder="Enter your therapist ID"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="range_date" class="form-label">
+                  <i class="far fa-calendar-alt me-1"></i> Select Date
+                </label>
+                <input
+                  type="date"
+                  class="form-control"
+                  id="range_date"
+                  min=""
+                  required
+                />
+                <div class="form-text">
+                  Only future dates can be selected for creating slots.
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="start_time" class="form-label">
+                    <i class="far fa-clock me-1"></i> Start Time
+                  </label>
+                  <select
+                    class="form-control form-select"
+                    id="start_time"
+                    required
+                  >
+                    <option value="">Choose a time...</option>
+                    {% for hour in range(8, 21) %}
+                    <option value="{{ '%02d' % hour }}:00">
+                      {{ '%02d' % hour }}:00
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="end_time" class="form-label">
+                    <i class="far fa-clock me-1"></i> End Time
+                  </label>
+                  <select
+                    class="form-control form-select"
+                    id="end_time"
+                    required
+                  >
+                    <option value="">Choose a time...</option>
+                    {% for hour in range(9, 22) %}
+                    <option value="{{ '%02d' % hour }}:00">
+                      {{ '%02d' % hour }}:00
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="slot_duration" class="form-label">
+                  <i class="fas fa-hourglass-half me-1"></i> Slot Duration
+                </label>
+                <select
+                  class="form-control form-select"
+                  id="slot_duration"
+                  required
+                >
+                  <option value="30">30 minutes</option>
+                  <option value="60" selected>1 hour</option>
+                  <option value="90">1 hour 30 minutes</option>
+                  <option value="120">2 hours</option>
+                </select>
+                <div class="form-text">Duration of each appointment slot.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-calendar-plus me-2"></i>Create Availability
+                Range
+              </button>
+            </form>
+            <div id="range-result-message" class="mt-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-calendar-week me-2"></i>
+        <span>View Your Schedule</span>
+      </div>
+      <div class="card-body">
+        <form id="view-slots-form">
+          <div class="mb-3">
+            <label for="view_therapist_id" class="form-label">
+              <i class="fas fa-id-card me-1"></i> Therapist ID
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="view_therapist_id"
+              placeholder="Enter your therapist ID"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="view_date" class="form-label">
+              <i class="far fa-calendar-alt me-1"></i> Select Date
+            </label>
+            <input
+              type="date"
+              class="form-control"
+              id="view_date"
+              min=""
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-info w-100">
+            <i class="fas fa-search me-2"></i>View Schedule
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <i class="fas fa-calendar-day me-2"></i>
+        <span>Your Schedule</span>
+      </div>
+      <div class="card-body">
+        <div id="slots-container">
+          <div class="text-center py-5 text-muted">
+            <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+            <p>Select your therapist ID and a date to view your schedule.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+  // Set min date to today for all date inputs
+  document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("slot_date").min = today;
+    document.getElementById("range_date").min = today;
+    document.getElementById("view_date").min = today;
+
+    // Sync therapist IDs across forms
+    document
+      .getElementById("therapist_id")
+      .addEventListener("input", function (e) {
+        document.getElementById("range_therapist_id").value = e.target.value;
+        document.getElementById("view_therapist_id").value = e.target.value;
+      });
+    document
+      .getElementById("range_therapist_id")
+      .addEventListener("input", function (e) {
+        document.getElementById("therapist_id").value = e.target.value;
+        document.getElementById("view_therapist_id").value = e.target.value;
+      });
+    document
+      .getElementById("view_therapist_id")
+      .addEventListener("input", function (e) {
+        document.getElementById("therapist_id").value = e.target.value;
+        document.getElementById("range_therapist_id").value = e.target.value;
+      });
+
+    // Validate end time is after start time
+    document
+      .getElementById("start_time")
+      .addEventListener("change", validateTimeRange);
+    document
+      .getElementById("end_time")
+      .addEventListener("change", validateTimeRange);
+  });
+
+  function validateTimeRange() {
+    const startTime = document.getElementById("start_time").value;
+    const endTime = document.getElementById("end_time").value;
+
+    if (startTime && endTime) {
+      if (startTime >= endTime) {
+        document
+          .getElementById("end_time")
+          .setCustomValidity("End time must be later than start time");
+      } else {
+        document.getElementById("end_time").setCustomValidity("");
+      }
+    }
+  }
+
+  // Validate date and time are in the future
+  function isValidFutureDateTime(dateStr, timeStr) {
+    // Create a datetime object
+    const datetimeStr = `${dateStr}T${timeStr}:00`;
+    const inputDateTime = new Date(datetimeStr);
+    const now = new Date();
+
+    // Compare datetimes
+    if (inputDateTime <= now) {
+      return {
+        isValid: false,
+        message: "Selected date and time must be in the future.",
+      };
+    }
+
+    return { isValid: true, message: "" };
+  }
+
+  document
+    .getElementById("create-slot-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const therapistId = document.getElementById("therapist_id").value;
+      const slotDate = document.getElementById("slot_date").value;
+      const slotTime = document.getElementById("slot_time").value;
+      const resultDiv = document.getElementById("result-message");
+
+      // Validate the slot date and time are in the future
+      const validation = isValidFutureDateTime(slotDate, slotTime);
+      if (!validation.isValid) {
+        resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${validation.message}</div>`;
+        return;
+      }
+
+      // Show loading state
+      resultDiv.innerHTML =
+        '<div class="text-center"><div class="spinner-border text-primary spinner-border-sm" role="status"></div> Processing...</div>';
+
+      // Combine date and time to create ISO datetime strings
+      const startTime = `${slotDate}T${slotTime}:00`;
+
+      // Calculate end time (1 hour later)
+      const startHour = parseInt(slotTime.split(":")[0]);
+      const endHour = startHour + 1;
+      const endTime = `${slotDate}T${endHour
+        .toString()
+        .padStart(2, "0")}:00:00`;
+
+      fetch("/api/appointments/therapist/slots", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          therapist_id: therapistId,
+          start_time: startTime,
+          end_time: endTime,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+
+            // Refresh slots view if we have therapist ID and date already selected
+            if (
+              document.getElementById("view_therapist_id").value === therapistId
+            ) {
+              // Set the view date to match the slot date
+              document.getElementById("view_date").value = slotDate;
+
+              // Trigger the view slots form submission
+              document
+                .getElementById("view-slots-form")
+                .dispatchEvent(new Event("submit"));
+            }
+
+            // Clear form fields except for therapist ID
+            document.getElementById("slot_time").value = "";
+          } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${
+              data.message || "Error creating slot"
+            }</div>`;
+          }
+        })
+        .catch((error) => {
+          resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    });
+
+  // Handle the create range form submission
+  document
+    .getElementById("create-range-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const therapistId = document.getElementById("range_therapist_id").value;
+      const rangeDate = document.getElementById("range_date").value;
+      const startTime = document.getElementById("start_time").value;
+      const endTime = document.getElementById("end_time").value;
+      const slotDuration = document.getElementById("slot_duration").value;
+      const resultDiv = document.getElementById("range-result-message");
+
+      // Validate the slot date and times are in the future
+      const startValidation = isValidFutureDateTime(rangeDate, startTime);
+      if (!startValidation.isValid) {
+        resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${startValidation.message}</div>`;
+        return;
+      }
+
+      // Show loading state
+      resultDiv.innerHTML =
+        '<div class="text-center"><div class="spinner-border text-primary spinner-border-sm" role="status"></div> Processing...</div>';
+
+      // Combine date and time to create ISO datetime strings
+      const start = `${rangeDate}T${startTime}:00`;
+      const end = `${rangeDate}T${endTime}:00`;
+
+      fetch("/api/appointments/therapist/availability", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          therapist_id: therapistId,
+          start_time: start,
+          end_time: end,
+          slot_duration_minutes: parseInt(slotDuration),
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+
+            // Refresh slots view if we have therapist ID and date already selected
+            if (
+              document.getElementById("view_therapist_id").value === therapistId
+            ) {
+              // Set the view date to match the range date
+              document.getElementById("view_date").value = rangeDate;
+
+              // Trigger the view slots form submission
+              document
+                .getElementById("view-slots-form")
+                .dispatchEvent(new Event("submit"));
+            }
+
+            // Clear form fields except for therapist ID
+            document.getElementById("start_time").value = "";
+            document.getElementById("end_time").value = "";
+          } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${
+              data.message || "Error creating availability range"
+            }</div>`;
+          }
+        })
+        .catch((error) => {
+          resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    });
+
+  document
+    .getElementById("view-slots-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const therapistId = document.getElementById("view_therapist_id").value;
+      const viewDate = document.getElementById("view_date").value;
+
+      // Show loading state
+      document.getElementById("slots-container").innerHTML =
+        '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading schedule data...</p></div>';
+
+      const apiUrl = `/api/appointments/therapist/${therapistId}/slots?date=${viewDate}`;
+
+      fetch(apiUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          const slotsContainer = document.getElementById("slots-container");
+
+          if (data.success) {
+            // Check if we have any slots
+            if (!data.slots || data.slots.length === 0) {
+              slotsContainer.innerHTML = `<div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>No slots found for therapist ID "${therapistId}" on this date.
+                </div>`;
+              return;
+            }
+
+            // Process slots - always include all slots regardless of status
+            const date = new Date(data.slots[0].start_time).toLocaleDateString(
+              undefined,
+              {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            );
+
+            // Count slots by status - make sure to always show both
+            const freeSlots = data.slots.filter(
+              (slot) => slot.status === "free"
+            );
+            const busySlots = data.slots.filter(
+              (slot) => slot.status === "busy"
+            );
+
+            let html = `<h5 class="section-title"><i class="far fa-calendar-check me-2"></i>Schedule for ${date}</h5>`;
+
+            html += `<div class="row mb-4">
+                      <div class="col-md-6">
+                        <div class="card bg-light">
+                          <div class="card-body text-center">
+                            <h3 class="text-success">${freeSlots.length}</h3>
+                            <p class="mb-0">Available Slots</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="card bg-light">
+                          <div class="card-body text-center">
+                            <h3 class="text-secondary">${busySlots.length}</h3>
+                            <p class="mb-0">Booked Slots</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>`;
+
+            // Add filtering controls
+            html += `<div class="mb-3">
+                      <div class="btn-group w-100">
+                        <button class="btn btn-outline-primary active filter-btn" data-filter="all">
+                          <i class="fas fa-calendar-alt me-2"></i>All Slots (${data.slots.length})
+                        </button>
+                        <button class="btn btn-outline-success filter-btn" data-filter="free">
+                          <i class="fas fa-check-circle me-2"></i>Available (${freeSlots.length})
+                        </button>
+                        <button class="btn btn-outline-secondary filter-btn" data-filter="busy">
+                          <i class="fas fa-user-clock me-2"></i>Booked (${busySlots.length})
+                        </button>
+                      </div>
+                    </div>`;
+
+            // Group slots by time
+            const sortedSlots = [...data.slots].sort((a, b) => {
+              return new Date(a.start_time) - new Date(b.start_time);
+            });
+
+            html += '<div class="list-group" id="slots-list">';
+
+            // Check if any slots exist after sorting
+            if (sortedSlots.length === 0) {
+              html += `<div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No slots available for this date.
+                      </div>`;
+            } else {
+              sortedSlots.forEach((slot) => {
+                const startTime = new Date(slot.start_time).toLocaleTimeString(
+                  [],
+                  { hour: "2-digit", minute: "2-digit" }
+                );
+                const endTime = new Date(slot.end_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                const statusClass =
+                  slot.status === "free"
+                    ? "list-group-item-success"
+                    : "list-group-item-secondary";
+                const statusIcon =
+                  slot.status === "free"
+                    ? '<i class="fas fa-check-circle text-success me-2"></i>'
+                    : '<i class="fas fa-user-clock text-secondary me-2"></i>';
+                const statusText =
+                  slot.status === "free" ? "Available" : "Booked";
+
+                // Determine if the time is in the past
+                const isPast = new Date(slot.start_time) < new Date();
+                const pastClass = isPast ? "opacity-50" : "";
+
+                // Format the date for nice display
+                const slotDate = new Date(slot.start_time);
+                const formattedDate = slotDate.toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                });
+
+                html += `<div class="list-group-item ${statusClass} ${pastClass} slot-item" data-status="${slot.status}">`;
+                html += `<div class="d-flex w-100 justify-content-between align-items-center">`;
+                html += `<div>`;
+                html += `<h5 class="mb-1"><i class="far fa-clock me-2"></i>${startTime} - ${endTime}</h5>`;
+
+                // Add additional info about the slot
+                html += `<div class="mt-2 small">`;
+                html += `<div><i class="far fa-calendar me-2"></i>${formattedDate}</div>`;
+                html += `<div><i class="fas fa-id-card me-2"></i>Therapist ID: ${therapistId}</div>`;
+                html += `<div class="text-muted"><i class="fas fa-info-circle me-2"></i>ISO Time: ${slot.start_time}</div>`;
+                html += `</div>`;
+
+                html += `</div>`;
+
+                // Show status badge with appropriate styling
+                html += `<span class="badge ${
+                  slot.status === "free" ? "bg-success" : "bg-secondary"
+                } py-2 px-3">
+                          ${statusIcon} ${statusText}
+                        </span>`;
+                html += `</div>`;
+
+                // If slot is booked, add a button to cancel the booking
+                if (slot.status === "busy") {
+                  html += `<div class="mt-2 text-end">
+                            <button class="btn btn-sm btn-outline-danger cancel-btn" 
+                                    data-therapist="${therapistId}" 
+                                    data-time="${slot.start_time}">
+                                    <i class="fas fa-times-circle me-1"></i> Cancel Booking
+                            </button>
+                          </div>`;
+                }
+
+                html += `</div>`;
+              });
+            }
+
+            html += "</div>";
+
+            // No results message for filtering
+            html += `<div id="no-slots-message" class="alert alert-info mt-3" style="display: none;">
+                      <i class="fas fa-info-circle me-2"></i>No slots match the selected filter.
+                    </div>`;
+
+            slotsContainer.innerHTML = html;
+
+            // Add filter functionality
+            document.querySelectorAll(".filter-btn").forEach((button) => {
+              button.addEventListener("click", function () {
+                // Update active button
+                document.querySelectorAll(".filter-btn").forEach((btn) => {
+                  btn.classList.remove("active");
+                });
+                this.classList.add("active");
+
+                const filter = this.getAttribute("data-filter");
+                const slots = document.querySelectorAll(".slot-item");
+                let visibleCount = 0;
+
+                slots.forEach((slot) => {
+                  const slotStatus = slot.getAttribute("data-status");
+
+                  if (filter === "all" || slotStatus === filter) {
+                    slot.style.display = "";
+                    visibleCount++;
+                  } else {
+                    slot.style.display = "none";
+                  }
+                });
+
+                // Show/hide no results message
+                document.getElementById("no-slots-message").style.display =
+                  visibleCount === 0 ? "block" : "none";
+              });
+            });
+
+            // Add cancel booking functionality
+            document.querySelectorAll(".cancel-btn").forEach((button) => {
+              button.addEventListener("click", function () {
+                if (confirm("Are you sure you want to cancel this booking?")) {
+                  const therapistId = this.getAttribute("data-therapist");
+                  const slotTime = this.getAttribute("data-time");
+
+                  fetch("/api/appointments/cancel", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      therapist_id: therapistId,
+                      slot_time: slotTime,
+                    }),
+                  })
+                    .then((response) => response.json())
+                    .then((data) => {
+                      if (data.success) {
+                        // Refresh the view
+                        document
+                          .getElementById("view-slots-form")
+                          .dispatchEvent(new Event("submit"));
+                      } else {
+                        alert(
+                          "Error canceling booking: " +
+                            (data.message || "Unknown error")
+                        );
+                      }
+                    })
+                    .catch((error) => {
+                      alert("Error: " + error.message);
+                    });
+                }
+              });
+            });
+          } else {
+            // API returned error
+            slotsContainer.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${
+              data.message || "Error fetching slots"
+            }</div>`;
+          }
+        })
+        .catch((error) => {
+          console.error("API Error:", error);
+          document.getElementById(
+            "slots-container"
+          ).innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${error.message}</div>`;
+        });
+    });
+</script>
+{% endblock %}
