@@ -1,0 +1,13 @@
+[theme]
+primaryColor = "#4CAF50" # Green as primary color
+backgroundColor = "#FFFFFF" # White background
+secondaryBackgroundColor = "#F0F2F6" # Light gray for secondary background
+textColor = "#262730" # Dark text
+font = "sans serif" # Sans serif font
+
+[server]
+enableCORS = true
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false 

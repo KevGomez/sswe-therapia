@@ -1,30 +1,51 @@
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 import os
+import streamlit as st  # Import streamlit
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables for local development
+if not hasattr(st, 'secrets'):  # Only load dotenv if not running in Streamlit Cloud
+    load_dotenv()
 
 import firebase_admin
 from firebase_admin import credentials, db
 
+# Helper function to get Firebase credentials
+def get_firebase_credentials():
+    # Try to get from Streamlit secrets first
+    if hasattr(st, 'secrets') and 'firebase' in st.secrets:
+        return {
+            "type": "service_account",
+            "project_id": "sansa-sswe-kevin",
+            "private_key_id": st.secrets.firebase.FIREBASE_PRIVATE_KEY_ID,
+            "private_key": st.secrets.firebase.FIREBASE_PRIVATE_KEY.replace("\\n", "\n"),
+            "client_email": st.secrets.firebase.FIREBASE_CLIENT_EMAIL,
+            "client_id": st.secrets.firebase.FIREBASE_CLIENT_ID,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": st.secrets.firebase.FIREBASE_CLIENT_CERT_URL
+        }
+    # Fall back to environment variables
+    else:
+        return {
+            "type": "service_account",
+            "project_id": "sansa-sswe-kevin",
+            "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+            "private_key": os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n"),
+            "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+            "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
+        }
+
 # Initialize Firebase if not already initialized
 if not firebase_admin._apps:
-    cred = credentials.Certificate({
-        "type": "service_account",
-        "project_id": "sansa-sswe-kevin",
-        "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-        "private_key": os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n"),
-        "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-        "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
-    })
-    
     try:
+        cred = credentials.Certificate(get_firebase_credentials())
         firebase_admin.initialize_app(cred, {
             'databaseURL': 'https://sansa-sswe-kevin-default-rtdb.firebaseio.com/'
         })
